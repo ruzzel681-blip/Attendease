@@ -1,0 +1,247 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role, status, avatar, and contact info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "userCode": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string" },
+        "syntheticEmail": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "departmentOrLocation": { "type": "string", "maxLength": 150 },
+        "subjectsTaught": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "avatar": { "type": "string" },
+        "bio": { "type": "string", "maxLength": 500 },
+        "officeHours": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 50 },
+        "approvedBy": { "type": "string" },
+        "approvedAt": { "type": "string" },
+        "rejectedReason": { "type": "string" }
+      },
+      "required": ["uid", "userCode", "name", "role", "status"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Classroom subject offered by teachers",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "maxLength": 20 },
+        "name": { "type": "string", "maxLength": 150 },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "schedule": { "type": "string" },
+        "room": { "type": "string" },
+        "meetUrl": { "type": "string" },
+        "blockedStudentIds": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["code", "name", "teacherId"]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "description": "Student subject enrollment requests",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentUserCode": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "subjectCode": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requestedAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["studentId", "subjectId", "teacherId", "status"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Class attendance records marked by teachers or students",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentUserCode": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "subjectCode": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["present", "late", "absent"] },
+        "note": { "type": "string", "maxLength": 300 },
+        "timestamp": { "type": "string" },
+        "markedBy": { "type": "string", "enum": ["student", "teacher"] },
+        "markedByName": { "type": "string" },
+        "markedById": { "type": "string" }
+      },
+      "required": ["studentId", "subjectId", "date", "status", "markedBy", "markedById"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Teacher broadcast announcements",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 5000 },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "subjectCode": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "isPinned": { "type": "boolean" },
+        "targetAudience": { "type": "string", "enum": ["all", "students_only", "teachers_only"] },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentSize": { "type": "number" },
+        "attachmentType": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "content", "teacherId", "subjectId"]
+    },
+    "AnnouncementComment": {
+      "title": "AnnouncementComment",
+      "description": "Comments on announcements",
+      "type": "object",
+      "properties": {
+        "announcementId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorRole": { "type": "string", "enum": ["student", "teacher"] },
+        "content": { "type": "string", "maxLength": 1000 },
+        "commentType": { "type": "string", "enum": ["public", "private"] },
+        "recipientStudentId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["announcementId", "authorId", "content"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Classwork assignments created by teachers",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "type": { "type": "string", "enum": ["assignment", "quiz", "activity", "project"] },
+        "subjectId": { "type": "string" },
+        "subjectCode": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "points": { "type": "number" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentSize": { "type": "number" },
+        "attachmentType": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "type", "subjectId", "teacherId", "dueDate"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Student work submissions for assignments",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "studentUserCode": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "content": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentSize": { "type": "number" },
+        "attachmentType": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["assigned", "submitted", "graded", "late"] },
+        "grade": { "type": "number" },
+        "feedback": { "type": "string" },
+        "gradedAt": { "type": "string" },
+        "gradedByName": { "type": "string" }
+      },
+      "required": ["assignmentId", "studentId", "subjectId", "status"]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "Private direct messages between students and teachers",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderRole": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "message": { "type": "string", "maxLength": 3000 },
+        "attachmentUrl": { "type": "string" },
+        "attachmentName": { "type": "string" },
+        "attachmentSize": { "type": "number" },
+        "attachmentType": { "type": "string" },
+        "read": { "type": "boolean" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["senderId", "recipientId", "message", "timestamp"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Immutable security and action audit logs",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "userCode": { "type": "string" },
+        "userName": { "type": "string" },
+        "role": { "type": "string" },
+        "details": { "type": "string" },
+        "severity": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["type", "userCode", "details", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles for students and teachers"
+    },
+    "/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "Subjects offered with schedules and teacher info"
+    },
+    "/enrollments/{enrollmentId}": {
+      "schema": "Enrollment",
+      "description": "Subject enrollment requests and status"
+    },
+    "/attendance/{recordId}": {
+      "schema": "AttendanceRecord",
+      "description": "Class session attendance records"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Broadcast notices and announcements"
+    },
+    "/announcementComments/{commentId}": {
+      "schema": "AnnouncementComment",
+      "description": "Comments on announcements"
+    },
+    "/assignments/{assignmentId}": {
+      "schema": "Assignment",
+      "description": "Classwork assignments and activities"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Submissions for assignments"
+    },
+    "/direct_messages/{messageId}": {
+      "schema": "DirectMessage",
+      "description": "Direct messages between users"
+    },
+    "/activityLogs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Audit and security logs"
+    }
+  }
+}

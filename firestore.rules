@@ -1,0 +1,191 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isDemoAdmin() {
+      return isAuthenticated() && (
+        request.auth.uid == 'admin-demo-uid-999' ||
+        (request.auth.token.email != null && request.auth.token.email == 'brynmonzon@gmail.com')
+      );
+    }
+
+    function isApprovedTeacher() {
+      return isAuthenticated() && (
+        isDemoAdmin() ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'
+        )
+      );
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow get, list: if isAuthenticated();
+      
+      // User can only create their own doc and it MUST start with status: 'pending'
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && request.resource.data.status == 'pending') ||
+        isDemoAdmin()
+      );
+
+      // Users can update their own non-sensitive fields, or an approved teacher can approve/reject
+      allow update: if isAuthenticated() && (
+        (
+          request.auth.uid == userId &&
+          request.resource.data.status == resource.data.status &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.userCode == resource.data.userCode
+        ) ||
+        isApprovedTeacher()
+      );
+
+      allow delete: if isDemoAdmin();
+    }
+
+    // 2. Subjects collection
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow create: if isApprovedTeacher();
+      allow update: if isApprovedTeacher();
+      allow delete: if isApprovedTeacher();
+    }
+
+    // 3. Enrollments collection
+    match /enrollments/{enrollmentId} {
+      allow get, list: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        isApprovedTeacher()
+      );
+
+      // Student can only create their OWN enrollment request with status 'pending'
+      allow create: if isAuthenticated() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      // Only approved teachers can approve/reject enrollment requests
+      allow update: if isApprovedTeacher() &&
+        request.resource.data.status in ['approved', 'rejected'];
+
+      allow delete: if isApprovedTeacher() || (
+        isAuthenticated() && 
+        resource.data.studentId == request.auth.uid && 
+        resource.data.status == 'pending'
+      );
+    }
+
+    // 4. Attendance collection
+    match /attendance/{recordId} {
+      allow get, list: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        isApprovedTeacher()
+      );
+
+      // Student self-check-in or teacher marking attendance
+      allow create: if (
+        isAuthenticated() &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.markedBy == 'student' &&
+        request.resource.data.markedById == request.auth.uid
+      ) || isApprovedTeacher();
+
+      allow update: if (
+        isAuthenticated() &&
+        resource.data.studentId == request.auth.uid &&
+        request.resource.data.studentId == request.auth.uid &&
+        request.resource.data.markedBy == 'student'
+      ) || isApprovedTeacher();
+
+      allow delete: if isApprovedTeacher();
+    }
+
+    // 5. Announcements collection
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow create: if isApprovedTeacher() && request.resource.data.teacherId == request.auth.uid;
+      allow update: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
+      allow delete: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
+    }
+
+    // 6. Announcement Comments collection
+    match /announcementComments/{commentId} {
+      allow read: if isAuthenticated() && (
+        !('commentType' in resource.data) ||
+        resource.data.commentType != 'private' ||
+        resource.data.authorId == request.auth.uid ||
+        resource.data.recipientStudentId == request.auth.uid ||
+        isApprovedTeacher()
+      );
+      
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      // Author can delete, or any teacher can delete for moderation
+      allow delete: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid ||
+        isApprovedTeacher()
+      );
+    }
+
+    // 7. Assignments collection
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isApprovedTeacher() && request.resource.data.teacherId == request.auth.uid;
+      allow update: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
+      allow delete: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
+    }
+
+    // 8. Submissions collection
+    match /submissions/{submissionId} {
+      allow get, list: if isAuthenticated() && (
+        resource.data.studentId == request.auth.uid ||
+        isApprovedTeacher()
+      );
+
+      // Student can only create their OWN submission
+      allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
+
+      // Student can only update their own submission if not yet graded; teacher can grade
+      allow update: if (
+        isAuthenticated() &&
+        resource.data.studentId == request.auth.uid &&
+        resource.data.status != 'graded'
+      ) || isApprovedTeacher();
+
+      allow delete: if isApprovedTeacher();
+    }
+
+    // 9. Direct Messages collection
+    match /direct_messages/{messageId} {
+      // Only the two participants can ever read a given message
+      allow get, list: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.recipientId == request.auth.uid
+      );
+      
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      
+      // Recipient can mark as read
+      allow update: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
+      
+      allow delete: if isAuthenticated() && (resource.data.senderId == request.auth.uid || isDemoAdmin());
+    }
+
+    // 10. Activity Logs collection (create-only audit log)
+    match /activityLogs/{logId} {
+      allow read: if isApprovedTeacher();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Immutable logs
+    }
+
+    // Deny-by-default fallback rule
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
