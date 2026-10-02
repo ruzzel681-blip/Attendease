@@ -1,12 +1,12 @@
 {
-  "projectId": "attendance-34b40",
-  "appId": "1:1090490838264:web:24f3928e1257d32e365f0d",
-  "apiKey": "AIzaSyCMqaFATCNGI6-VEQUqP-EOh_-My3TL9ZY",
-  "authDomain": "attendance-34b40.firebaseapp.com",
+  "projectId": "attendease-e27b0",
+  "appId": "1:595546585728:web:f481fe4fa5b62ef88d8465",
+  "apiKey": "AIzaSyCkyFk-WkZ9Nzz2gYpxqD3kXnOvP8aThsc",
+  "authDomain": "attendease-e27b0.firebaseapp.com",
   "firestoreDatabaseId": "",
-  "storageBucket": "attendance-34b40.firebasestorage.app",
-  "messagingSenderId": "1090490838264",
-  "measurementId": "G-ELHEJXHDQK",
+  "storageBucket": "attendease-e27b0.firebasestorage.app",
+  "messagingSenderId": "595546585728",
+  "measurementId": "G-V60SY5TPPP",
   "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }
