@@ -1,12 +1,12 @@
 {
-  "projectId": "attendease-e27b0",
-  "appId": "1:595546585728:web:f481fe4fa5b62ef88d8465",
-  "apiKey": "AIzaSyCkyFk-WkZ9Nzz2gYpxqD3kXnOvP8aThsc",
-  "authDomain": "attendease-e27b0.firebaseapp.com",
+  "projectId": "teamcedricattendease",
+  "appId": "1:603283091663:web:618e10f595a9ce1a6d47ba",
+  "apiKey": "AIzaSyDiRJ7KwZUeMu80m3Y1G7uRsJq_OrFNUI8",
+  "authDomain": "teamcedricattendease.firebaseapp.com",
   "firestoreDatabaseId": "",
-  "storageBucket": "attendease-e27b0.firebasestorage.app",
-  "messagingSenderId": "595546585728",
-  "measurementId": "G-V60SY5TPPP",
+  "storageBucket": "teamcedricattendease.firebasestorage.app",
+  "messagingSenderId": "603283091663",
+  "measurementId": "",
   "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }
