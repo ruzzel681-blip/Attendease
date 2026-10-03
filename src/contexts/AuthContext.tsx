@@ -178,10 +178,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Please provide both your ID and password.');
     }
 
-    const syntheticEmail = getSyntheticEmail(cleanCode, role);
+    // An admin account can be created two ways: added directly in the Firebase
+    // console (admin.<id>@cedric.edu), or registered in the app as a teacher and
+    // then promoted by editing its Firestore document. Try both emails.
+    const emailsToTry = role === 'admin'
+      ? [getSyntheticEmail(cleanCode, 'admin'), getSyntheticEmail(cleanCode, 'teacher')]
+      : [getSyntheticEmail(cleanCode, role)];
+    const syntheticEmail = emailsToTry[0];
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, syntheticEmail, password);
+      let userCredential: Awaited<ReturnType<typeof signInWithEmailAndPassword>> | undefined;
+      for (let i = 0; i < emailsToTry.length; i++) {
+        try {
+          userCredential = await signInWithEmailAndPassword(auth, emailsToTry[i], password);
+          break;
+        } catch (e: any) {
+          const notFound = ['auth/invalid-credential', 'auth/user-not-found', 'auth/invalid-login-credentials'].includes(e.code);
+          if (i === emailsToTry.length - 1 || !notFound) throw e;
+        }
+      }
+      if (!userCredential) throw new Error('Sign in failed.');
       
       // Verify profile in firestore
       const profileSnap = await getDoc(doc(db, 'users', userCredential.user.uid));
