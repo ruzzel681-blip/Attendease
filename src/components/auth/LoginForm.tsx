@@ -45,6 +45,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   const isTeacher = role === 'teacher';
+  const isAdmin = role === 'admin';
 
   return (
     <div className="w-full max-w-lg mx-auto my-4 sm:my-8 px-2 sm:px-4">
@@ -55,7 +56,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           Sign In
         </h1>
         <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 max-w-sm mx-auto font-sans">
-          Sign in to your account to view attendance and classes.
+          {isAdmin ? 'Administrator access: manage teacher approvals.' : 'Sign in to your account to view attendance and classes.'}
         </p>
       </div>
 
@@ -69,6 +70,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <div className="absolute bottom-3 right-3 text-[9px] font-mono text-stone-400 dark:text-stone-600 select-none">+</div>
 
         {/* Role Switch */}
+        {isAdmin ? (
+          <div className="mb-8 p-3.5 rounded-2xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 flex items-center justify-between gap-3">
+            <div className="flex items-center space-x-2 text-xs font-heading font-bold text-stone-900 dark:text-stone-100">
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              <span className="tracking-wide">Administrator sign in</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRoleChange('teacher')}
+              className="text-[11px] font-mono text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white underline underline-offset-4 cursor-pointer"
+            >
+              Back
+            </button>
+          </div>
+        ) : (
         <div className="mb-8 bg-stone-100 dark:bg-stone-900 p-1.5 rounded-2xl border border-stone-200 dark:border-stone-800 flex items-center gap-1.5">
           <button
             type="button"
@@ -96,6 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <span className="tracking-wide">Teacher</span>
           </button>
         </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -111,7 +128,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {/* User Code Field (ID) */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-mono font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              {isTeacher ? 'Teacher ID' : 'Student ID'}
+              {isAdmin ? 'Admin ID' : isTeacher ? 'Teacher ID' : 'Student ID'}
             </label>
             <div className="relative border-b border-stone-300 dark:border-stone-700 focus-within:border-stone-900 dark:focus-within:border-white transition-colors">
               <div className="absolute inset-y-0 left-0 pl-1 flex items-center pointer-events-none text-stone-400">
@@ -123,7 +140,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 id="login-user-code-input"
                 value={userCode}
                 onChange={(e) => setUserCode(e.target.value)}
-                placeholder={isTeacher ? 'e.g. T-2001' : 'e.g. S-10045'}
+                placeholder={isAdmin ? 'e.g. ADMIN-001' : isTeacher ? 'e.g. T-2001' : 'e.g. S-10045'}
                 className="w-full pl-8 pr-3 py-2.5 bg-transparent text-stone-900 dark:text-white text-sm focus:outline-none font-mono tracking-wide placeholder:text-stone-400 dark:placeholder:text-stone-600"
               />
             </div>
@@ -179,18 +196,30 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         </form>
 
-        {/* Switch to Register */}
-        <div className="mt-8 pt-5 border-t border-stone-200 dark:border-stone-800 text-center">
-          <p className="text-xs text-stone-500 dark:text-stone-400">
-            Don't have an account?{' '}
+        {/* Switch to Register / Admin sign in */}
+        <div className="mt-8 pt-5 border-t border-stone-200 dark:border-stone-800 text-center space-y-3">
+          {!isAdmin && (
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Don't have an account?{' '}
+              <button
+                onClick={onSwitchToRegister}
+                id="switch-to-register-btn"
+                className="font-bold text-stone-900 dark:text-white underline underline-offset-4 decoration-stone-300 dark:decoration-stone-700 hover:decoration-stone-900 dark:hover:decoration-white cursor-pointer transition-colors"
+              >
+                Register here →
+              </button>
+            </p>
+          )}
+          {!isAdmin && (
             <button
-              onClick={onSwitchToRegister}
-              id="switch-to-register-btn"
-              className="font-bold text-stone-900 dark:text-white underline underline-offset-4 decoration-stone-300 dark:decoration-stone-700 hover:decoration-stone-900 dark:hover:decoration-white cursor-pointer transition-colors"
+              type="button"
+              onClick={() => onRoleChange('admin')}
+              id="admin-signin-link"
+              className="text-[11px] font-mono text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 cursor-pointer transition-colors"
             >
-              Register here →
+              Administrator sign in
             </button>
-          </p>
+          )}
         </div>
 
       </div>

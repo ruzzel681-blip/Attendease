@@ -228,8 +228,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // ignore logging failure
       }
       
-      if (err.code === 'auth/operation-not-allowed') {
+      if (err.code === 'auth/operation-not-allowed' && role !== 'admin') {
         // Fallback session when Email/Password is disabled in Firebase Console
+        // (never offered for the admin role: admin access must be real)
         const fallbackProfile: UserProfile = {
           uid: `${role}-${cleanCode.toLowerCase()}`,
           userCode: cleanCode,
@@ -275,6 +276,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanCode = data.userCode.trim().toUpperCase();
     const cleanName = data.name.trim();
 
+    // Admin accounts can never be self-registered. They are created by hand in
+    // the Firebase console (see README).
+    if (data.role === 'admin') {
+      throw new Error('Administrator accounts cannot be registered here.');
+    }
+
     if (!cleanCode || !cleanName || !data.password) {
       throw new Error('Please fill in all required fields.');
     }
@@ -316,7 +323,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'info'
       );
 
-      showToast('Registration successful! Your account is pending teacher approval.', 'info');
+      showToast(
+        data.role === 'teacher'
+          ? 'Registration successful! Your account is pending administrator approval.'
+          : 'Registration successful! Your account is pending teacher approval.',
+        'info'
+      );
 
     } catch (err: any) {
       console.error('Registration error:', err);

@@ -8,6 +8,7 @@ import { RegisterForm } from './components/auth/RegisterForm';
 import { PendingApprovalState } from './components/auth/PendingApprovalState';
 import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { StudentDashboard } from './components/student/StudentDashboard';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Compass, AlertOctagon, LogOut, Loader2 } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
@@ -44,7 +45,7 @@ const MainAppContent: React.FC = () => {
         <main className="flex-1 flex flex-col items-center justify-start sm:justify-center px-3 sm:px-6 py-4 sm:py-8 w-full max-w-7xl mx-auto my-auto">
           {isRegistering ? (
             <RegisterForm 
-              role={activeRole}
+              role={activeRole === 'admin' ? 'student' : activeRole}
               onRoleChange={(r) => setSelectedRole(r)}
               onSwitchToLogin={() => setIsRegistering(false)}
             />
@@ -138,10 +139,12 @@ const MainAppContent: React.FC = () => {
               <AlertOctagon className="h-8 w-8" />
             </div>
             <div>
-              <span className="text-[10px] font-mono uppercase text-rose-500 tracking-widest font-bold block mb-1">REGISTRATION NOT APPROVED</span>
-              <h2 className="text-xl font-display font-bold text-stone-900 dark:text-white italic">Account Not Approved</h2>
+              <span className="text-[10px] font-mono uppercase text-rose-500 tracking-widest font-bold block mb-1">{userProfile.role === 'teacher' ? 'ACCESS NOT GRANTED' : 'REGISTRATION NOT APPROVED'}</span>
+              <h2 className="text-xl font-display font-bold text-stone-900 dark:text-white italic">{userProfile.role === 'teacher' ? 'Teacher Access Unavailable' : 'Account Not Approved'}</h2>
               <p className="text-xs text-stone-600 dark:text-stone-400 mt-2 font-sans">
-                Your registration was not approved by a teacher.
+                {userProfile.role === 'teacher'
+                  ? 'Your teacher access was not approved, or has been revoked, by an administrator.'
+                  : 'Your registration was not approved by a teacher.'}
               </p>
               {userProfile.rejectedReason && (
                 <p className="mt-3 p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 text-xs rounded-xl border border-rose-200 dark:border-rose-900 font-mono text-left">
@@ -169,7 +172,9 @@ const MainAppContent: React.FC = () => {
     <div className="min-h-screen w-full flex flex-col bg-data-canvas text-stone-900 dark:text-stone-100 transition-colors overflow-x-hidden">
       <Header />
       <main className="flex-grow w-full">
-        {userProfile.role === 'teacher' ? (
+        {userProfile.role === 'admin' ? (
+          <AdminDashboard />
+        ) : userProfile.role === 'teacher' ? (
           <TeacherDashboard />
         ) : (
           <StudentDashboard />

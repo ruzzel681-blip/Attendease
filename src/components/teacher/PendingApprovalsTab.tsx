@@ -42,7 +42,8 @@ export const PendingApprovalsTab: React.FC = () => {
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
-    const unSubUsers = subscribePendingUsers(setPendingUsers);
+    // Teachers only review student accounts; teacher accounts are approved by an administrator.
+    const unSubUsers = subscribePendingUsers((users) => setPendingUsers(users.filter(u => u.role === 'student')));
     const unSubEnr = subscribeAllEnrollments((allEnrs) => {
       setPendingEnrollments(allEnrs.filter(e => e.status === 'pending'));
     });
@@ -163,7 +164,7 @@ export const PendingApprovalsTab: React.FC = () => {
               Pending Approvals
             </h2>
             <p className="text-xs text-stone-500 dark:text-stone-400 font-sans">
-              Review and approve user accounts and course enrollments.
+              Review and approve student accounts and course enrollments.
             </p>
           </div>
         </div>

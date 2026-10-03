@@ -150,7 +150,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           <Compass className="h-4 w-4 mt-0.5 shrink-0 text-stone-600 dark:text-stone-400" />
           <div className="leading-relaxed font-sans">
             <strong className="font-heading uppercase tracking-wider text-[10px] text-stone-900 dark:text-stone-100 block">Approval Notice:</strong>
-            New {role} accounts require teacher approval before system entry.
+            {isTeacher
+              ? 'New teacher accounts require administrator approval before system entry.'
+              : 'New student accounts require teacher approval before system entry.'}
           </div>
         </div>
 

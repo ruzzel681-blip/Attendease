@@ -7,46 +7,75 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isDemoAdmin() {
-      return isAuthenticated() && (
-        request.auth.uid == 'admin-demo-uid-999' ||
-        (request.auth.token.email != null && request.auth.token.email == 'brynmonzon@gmail.com')
-      );
+    // Admin accounts cannot be created from the app. They are created once, by
+    // hand, in the Firebase console (see README).
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
     }
 
     function isApprovedTeacher() {
-      return isAuthenticated() && (
-        isDemoAdmin() ||
-        (
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'
-        )
-      );
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved';
+    }
+
+    // The only fields an approver (admin or teacher) may touch on someone else's profile.
+    function onlyApprovalFieldsChanged() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['status', 'approvedBy', 'approvedAt', 'rejectedReason']);
     }
 
     // 1. Users collection
     match /users/{userId} {
       allow get, list: if isAuthenticated();
-      
-      // User can only create their own doc and it MUST start with status: 'pending'
-      allow create: if isAuthenticated() && (
-        (request.auth.uid == userId && request.resource.data.status == 'pending') ||
-        isDemoAdmin()
-      );
 
-      // Users can update their own non-sensitive fields, or an approved teacher can approve/reject
-      allow update: if isAuthenticated() && (
+      // Self-registration: you may only create your OWN profile, as a student or
+      // teacher, and it MUST start as 'pending'. Nobody can self-register as admin.
+      // Approved teachers may also create already-approved STUDENT records
+      // (bulk roster import).
+      allow create: if isAuthenticated() && (
         (
           request.auth.uid == userId &&
-          request.resource.data.status == resource.data.status &&
-          request.resource.data.role == resource.data.role &&
-          request.resource.data.userCode == resource.data.userCode
+          request.resource.data.status == 'pending' &&
+          request.resource.data.role in ['student', 'teacher']
         ) ||
-        isApprovedTeacher()
+        (
+          isApprovedTeacher() &&
+          request.resource.data.role == 'student' &&
+          request.resource.data.status == 'approved'
+        )
       );
 
-      allow delete: if isDemoAdmin();
+      allow update: if isAuthenticated() && (
+        // 1) Your own profile: identity, role and approval fields are locked.
+        (
+          request.auth.uid == userId &&
+          !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['role', 'status', 'userCode', 'uid', 'syntheticEmail',
+                     'approvedBy', 'approvedAt', 'rejectedReason'])
+        ) ||
+        // 2) Admin: approve / revoke any non-admin account (teachers included).
+        (
+          isAdmin() &&
+          resource.data.role != 'admin' &&
+          request.resource.data.role == resource.data.role &&
+          onlyApprovalFieldsChanged()
+        ) ||
+        // 3) Approved teacher: approve / reject STUDENT accounts only.
+        (
+          isApprovedTeacher() &&
+          resource.data.role == 'student' &&
+          request.resource.data.role == 'student' &&
+          onlyApprovalFieldsChanged()
+        )
+      );
+
+      // Only an admin can delete a profile, and never another admin.
+      allow delete: if isAdmin() && resource.data.role != 'admin';
     }
 
     // 2. Subjects collection
@@ -109,8 +138,8 @@ service cloud.firestore {
     match /announcements/{announcementId} {
       allow read: if isAuthenticated();
       allow create: if isApprovedTeacher() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
-      allow delete: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
+      allow update: if (isApprovedTeacher() && resource.data.teacherId == request.auth.uid) || isAdmin();
+      allow delete: if (isApprovedTeacher() && resource.data.teacherId == request.auth.uid) || isAdmin();
     }
 
     // 6. Announcement Comments collection
@@ -136,8 +165,8 @@ service cloud.firestore {
     match /assignments/{assignmentId} {
       allow read: if isAuthenticated();
       allow create: if isApprovedTeacher() && request.resource.data.teacherId == request.auth.uid;
-      allow update: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
-      allow delete: if isApprovedTeacher() && (resource.data.teacherId == request.auth.uid || isDemoAdmin());
+      allow update: if (isApprovedTeacher() && resource.data.teacherId == request.auth.uid) || isAdmin();
+      allow delete: if (isApprovedTeacher() && resource.data.teacherId == request.auth.uid) || isAdmin();
     }
 
     // 8. Submissions collection
@@ -173,12 +202,12 @@ service cloud.firestore {
       // Recipient can mark as read
       allow update: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
       
-      allow delete: if isAuthenticated() && (resource.data.senderId == request.auth.uid || isDemoAdmin());
+      allow delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
     }
 
     // 10. Activity Logs collection (create-only audit log)
     match /activityLogs/{logId} {
-      allow read: if isApprovedTeacher();
+      allow read: if isApprovedTeacher() || isAdmin();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Immutable logs
     }

@@ -13,7 +13,8 @@ import {
   addDoc, 
   serverTimestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteField
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { 
@@ -200,6 +201,9 @@ export function subscribeActivityLogs(callback: (logs: ActivityLog[]) => void) {
 }
 
 // Actions
+// Used by approved teachers to approve STUDENT accounts. Teacher accounts can only
+// be approved/revoked by an administrator (see setTeacherStatusByAdmin below),
+// and Firestore rules enforce that on the server.
 export async function approveUserAccount(targetUid: string, approverName: string, approverUid: string) {
   const userRef = doc(db, 'users', targetUid);
   const snap = await getDoc(userRef);
@@ -241,6 +245,63 @@ export async function rejectUserAccount(targetUid: string, rejecterName: string,
     `Account rejected by Teacher ${rejecterName}. Reason: ${reason || 'None specified'}`,
     'warning'
   );
+}
+
+// Admin-only: approve, revoke, or re-approve a TEACHER account.
+//   newStatus 'approved' -> grants (or restores) teacher access
+//   newStatus 'rejected' -> denies a pending request, or revokes an approved teacher
+// The teacher's open session is kicked to the "not approved" screen immediately
+// because the app listens to their profile document in real time.
+export async function setTeacherStatusByAdmin(
+  targetUid: string,
+  newStatus: 'approved' | 'rejected',
+  admin: { uid: string; name: string },
+  reason?: string
+) {
+  const userRef = doc(db, 'users', targetUid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) throw new Error('That account no longer exists.');
+  const target = snap.data() as UserProfile;
+  if (target.role !== 'teacher') {
+    throw new Error('Only teacher accounts can be managed from the admin panel.');
+  }
+
+  const wasApproved = target.status === 'approved';
+
+  if (newStatus === 'approved') {
+    await updateDoc(userRef, {
+      status: 'approved',
+      approvedBy: `${admin.name} (Admin)`,
+      approvedAt: new Date().toISOString(),
+      rejectedReason: deleteField()
+    });
+    await logActivity(
+      target.status === 'rejected' ? 'account_reinstated' : 'account_approval',
+      target.userCode,
+      target.name,
+      'teacher',
+      target.status === 'rejected'
+        ? `Teacher access restored by Administrator ${admin.name}`
+        : `Teacher account approved by Administrator ${admin.name}`,
+      'info'
+    );
+  } else {
+    const finalReason = reason?.trim() || (wasApproved
+      ? 'Teacher access was revoked by an administrator.'
+      : 'Registration was not approved by an administrator.');
+    await updateDoc(userRef, {
+      status: 'rejected',
+      rejectedReason: finalReason
+    });
+    await logActivity(
+      wasApproved ? 'account_revocation' : 'account_rejection',
+      target.userCode,
+      target.name,
+      'teacher',
+      `${wasApproved ? 'Teacher access revoked' : 'Teacher registration rejected'} by Administrator ${admin.name}. Reason: ${finalReason}`,
+      'warning'
+    );
+  }
 }
 
 export function normalizeMeetUrl(url?: string): string | undefined {

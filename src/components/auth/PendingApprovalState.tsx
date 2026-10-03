@@ -47,7 +47,7 @@ export const PendingApprovalState: React.FC = () => {
             Awaiting Approval
           </h2>
           <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 max-w-md mx-auto leading-relaxed font-sans">
-            Welcome, <strong className="text-stone-900 dark:text-stone-100">{userProfile.name}</strong>. Your account registration is awaiting review by a faculty member.
+            Welcome, <strong className="text-stone-900 dark:text-stone-100">{userProfile.name}</strong>. Your account registration is awaiting review by {userProfile.role === 'teacher' ? 'an administrator' : 'a faculty member'}.
           </p>
         </div>
 
@@ -84,8 +84,10 @@ export const PendingApprovalState: React.FC = () => {
         <div className="p-4 rounded-2xl bg-stone-100/80 dark:bg-stone-900/80 border border-stone-200 dark:border-stone-800 text-xs text-stone-700 dark:text-stone-300 text-left flex items-start space-x-3">
           <FileCheck2 className="h-4 w-4 mt-0.5 shrink-0 text-stone-600 dark:text-stone-400" />
           <div className="leading-relaxed font-sans">
-            <strong className="text-stone-900 dark:text-stone-100 block font-heading text-[11px] uppercase tracking-wider mb-0.5">Faculty Verification:</strong>
-            A teacher must approve your account before access is unlocked.
+            <strong className="text-stone-900 dark:text-stone-100 block font-heading text-[11px] uppercase tracking-wider mb-0.5">{userProfile.role === 'teacher' ? 'Administrator Verification:' : 'Faculty Verification:'}</strong>
+            {userProfile.role === 'teacher'
+              ? 'An administrator must approve your account before teacher access is unlocked.'
+              : 'A teacher must approve your account before access is unlocked.'}
           </div>
         </div>
 

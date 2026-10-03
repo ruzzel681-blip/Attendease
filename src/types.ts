@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'teacher';
+export type UserRole = 'student' | 'teacher' | 'admin';
 export type UserStatus = 'pending' | 'approved' | 'rejected';
 export type AttendanceStatus = 'present' | 'late' | 'absent' | 'excused';
 
@@ -102,6 +102,8 @@ export type ActivityType =
   | 'registration'
   | 'account_approval'
   | 'account_rejection'
+  | 'account_revocation'
+  | 'account_reinstated'
   | 'attendance_checkin'
   | 'self_check_in'
   | 'attendance_override'

@@ -10,7 +10,7 @@
         "name": { "type": "string", "maxLength": 100 },
         "email": { "type": "string" },
         "syntheticEmail": { "type": "string" },
-        "role": { "type": "string", "enum": ["student", "teacher"] },
+        "role": { "type": "string", "enum": ["student", "teacher", "admin"] },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
         "departmentOrLocation": { "type": "string", "maxLength": 150 },
         "subjectsTaught": { "type": "array" },
